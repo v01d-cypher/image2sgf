@@ -16,4 +16,4 @@ Variables in the script must be tweaked for the images you are trying to convert
 They are currently configured for the KPA problems I had.
 
 To use the script:
-`python2 image2sgf.py 'folder/with/images/'`
+`python2 image2sgf.py '/path/with/images/'`
