@@ -10,8 +10,58 @@ image_dir = sys.argv[1]
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
-offset = 13
-interval = 19
+BORDER = 9
+INTERVAL = 19
+
+# use a small offset from intersection to make sure we don't grab a
+# black pixel from the grid line as opposed to a black pixel from a stone
+OFFSET = 3
+
+# TL = Top Left , TR = Top Right
+# BL = Bottom Left , BR = Bottom Right
+# the corner you want the image flipped from
+ORIGIN_CORNER = 'TR'
+# the corner you want the image flipped to
+TARGET_CORNER = 'TL'
+
+
+def transpose_image(image, x_lines, y_lines):
+    transpose_matrix = {
+        ('TL', 'TR'): 'V',
+        ('TL', 'BL'): 'H',
+        ('TL', 'BR'): 'HV',
+
+        ('TR', 'TL'): 'V',
+        ('TR', 'BL'): 'HV',
+        ('TR', 'BR'): 'H',
+
+        ('BL', 'TL'): 'H',
+        ('BL', 'TR'): 'HV',
+        ('BL', 'BR'): 'V',
+
+        ('BR', 'TL'): 'HV',
+        ('BR', 'TR'): 'H',
+        ('BR', 'BL'): 'V'}
+
+    if TARGET_CORNER == 'TL':
+        x_string = y_string = string.ascii_letters
+    elif TARGET_CORNER == 'TR':
+        x_string = string.ascii_letters[19 - x_lines:19]
+        y_string = string.ascii_letters
+    elif TARGET_CORNER == 'BL':
+        x_string = string.ascii_letters
+        y_string = string.ascii_letters[19 - y_lines:19]
+    elif TARGET_CORNER == 'BR':
+        x_string = string.ascii_letters[19 - x_lines:19]
+        y_string = string.ascii_letters[19 - y_lines:19]
+
+    for instruction in transpose_matrix[(ORIGIN_CORNER, TARGET_CORNER)]:
+        if instruction == 'H':
+            image = image.transpose(Image.FLIP_TOP_BOTTOM)
+        if instruction == 'V':
+            image = image.transpose(Image.FLIP_LEFT_RIGHT)
+
+    return image, x_string, y_string
 
 
 for root, dir, files in os.walk(image_dir):
@@ -23,45 +73,46 @@ for root, dir, files in os.walk(image_dir):
             print("Cannot open '{}'. Not supported or not an image file".format(path))
             continue
 
-        #These images are on the top-right of board. Flip image to make it top-left.
-        im = im.transpose(Image.FLIP_LEFT_RIGHT)
         width, height = im.size
-        x_lines = width / interval
-        y_lines = height / interval
+        x_lines = width / INTERVAL
+        y_lines = height / INTERVAL
 
-        # Get letter coordinates for top-right of board
-        #x_string_coord = string.ascii_letters[19 - x_lines:19]
-        #y_string_coord = string.ascii_letters[:y_lines]
+        im, x_string, y_string = transpose_image(im, x_lines, y_lines)
 
-        # Get letter coordinates for top-left of board
-        x_string_coord = y_string_coord = string.ascii_letters
-
-        #deduct 1 from total lines because first line starts on offset
+        # deduct 1 from total lines because first line starts on offset
         x_lines = x_lines - 1
         y_lines = y_lines - 1
 
         rgbimg = im.convert('RGB')
-        pix = rgbimg.load()
+        pixels = rgbimg.load()
 
         coords = {
             'AB': [],
             'AW': []}
 
-        xc = 0
-        yc = 0
-        for x in range(offset, (interval * x_lines) + interval, interval):
-            yc = 0
-            for y in range(offset, (interval * y_lines) + interval, interval):
-                p = pix[x, y]
-                if p == BLACK:
-                    coords['AB'].append('[{}{}]'.format(x_string_coord[xc], y_string_coord[yc]))
-                if p == WHITE:
-                    coords['AW'].append('[{}{}]'.format(x_string_coord[xc], y_string_coord[yc]))
-                yc += 1
-            xc += 1
+        index_x_string = 0
+        for x in range(BORDER, (INTERVAL * x_lines) + INTERVAL, INTERVAL):
+            index_y_string = 0
+            for y in range(BORDER, (INTERVAL * y_lines) + INTERVAL, INTERVAL):
+                # get pixel using no offset:
+                #   if it's white, then it's a white stone
+                #   if it's black:
+                #     get pixel using offset:
+                #       if it's black, then it's a black stone
+                #       else it's an empty intersection
+                point = pixels[x, y]
+                if point == WHITE:
+                    coords['AW'].append('[{}{}]'.format(x_string[index_x_string], y_string[index_y_string]))
+                else:
+                    point = pixels[x + OFFSET, y + OFFSET]
+                    if point == BLACK:
+                        coords['AB'].append('[{}{}]'.format(x_string[index_x_string], y_string[index_y_string]))
+
+                index_y_string += 1
+            index_x_string += 1
 
         with open('{}.sgf'.format(os.path.splitext(path)[0]), 'w') as f:
-            f.writelines('(;GM[1]FF[4]SZ[19]')
-            f.writelines('AB{}'.format(''.join(sorted(coords['AB']))))
-            f.writelines('AW{}'.format(''.join(sorted(coords['AW']))))
-            f.writelines(')')
+            f.write('(;GM[1]FF[4]SZ[19]\n')
+            f.write('AB{}\n'.format(''.join(sorted(coords['AB']))))
+            f.write('AW{}\n'.format(''.join(sorted(coords['AW']))))
+            f.write(')\n')
