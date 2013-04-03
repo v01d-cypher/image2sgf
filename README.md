@@ -10,7 +10,10 @@ Command line script to create an SGF file from an image for Go/Baduk/Weiqi
 I used this script to convert images of the Korean Problem Academy tsumego to SGF.
 
 Variables in the script must be tweaked for the images you are trying to convert.
-They are currently set for the KPA problems I had.
+* Change BORDER, INTERVAL and OFFSET.
+* Use ORIGIN_CORNER and TARGET_CORNER to move the image to a different corner of the board
+
+They are currently configured for the KPA problems I had.
 
 To use the script:
 `python2 image2sgf.py 'folder/with/images/'`
