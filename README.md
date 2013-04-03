@@ -4,8 +4,8 @@ image2sgf
 Command line script to create an SGF file from an image for Go/Baduk/Weiqi
 
 ##### Requirements:
-  Python2
-  PIL (Python Image Library)
+* Python2
+* PIL (Python Image Library)
 
 I had images of the Korean Problem Academy tsumego and I used this script to convert them to SGF.
 
