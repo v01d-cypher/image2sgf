@@ -12,4 +12,4 @@ I had images of the Korean Problem Academy tsumego and I used this script to con
 Variables in the script must be tweaked for the images you are trying to convert. They are currently correct for the KPA problems.
 
 To use the script:
-`python2 image2sgf.py 'Folder with images'`
+`python2 image2sgf.py 'folder/with/images/'`
